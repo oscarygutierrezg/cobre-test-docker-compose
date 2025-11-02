@@ -1,0 +1,123 @@
+{
+	"info": {
+		"_postman_id": "0988edd1-7be2-4c77-8e39-7c49dfe03cbf",
+		"name": "Test Cobre",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "831327"
+	},
+	"item": [
+		{
+			"name": "GET Account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"var href = jsonData.href",
+							"postman.setEnvironmentVariable(\"account_id\", jsonData.account_id);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/v1/accounts/ACC-2024-005",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1",
+						"accounts",
+						"ACC-2024-005"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Transactions by Account Number",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/v1/accounts/{{account_id}}/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1",
+						"accounts",
+						"{{account_id}}",
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Batch",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/oscargutierrezborges/other-workspace/desafio-cobre/ms/accounts/src/test/resources/test-data/cbmm_events_valid.json"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/v1/events/batch/upload",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1",
+						"events",
+						"batch",
+						"upload"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/actuator/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"actuator",
+						"health"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
