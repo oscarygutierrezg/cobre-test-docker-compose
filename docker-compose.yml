@@ -100,6 +100,32 @@ services:
       cbmm-network:
         ipv4_address: 172.25.0.14
 
+  test-cobre-backend:
+    image: oscarygutierrezg/test-cobre-backend:latest
+    container_name: cbmm-test-cobre-backend
+    hostname: test-cobre-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      cbmm-network:
+        ipv4_address: 172.25.0.16
+    restart: unless-stopped
+
   ms-accounts:
     image: oscarygutierrezg/test-cobre-backend:latest
     container_name: cbmm-ms-accounts

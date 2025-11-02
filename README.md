@@ -68,6 +68,7 @@ graph TB
     Kafka -->|4. Consume Events| MS_Accounts
     MS_Accounts -->|Process CBMM Events| Account_DB
     MS_Accounts -->|Idempotency Check| Redis
+    MS_Accounts -->|Distributed Lock| Redis
     MS_Accounts -->|5. Results| Kafka
     
     Kafka -->|6. Status Updates| Saga
