@@ -58,6 +58,7 @@ graph TB
         Kafka[Apache Kafka<br/>Topics]
         Redis[Redis Cache]
         OTEL[OpenTelemetry<br/>Collector]
+        Vault[HashiCorp Vault<br/>Secrets Management]
     end
     
     Client -->|1. Request CBMM| CBMM
@@ -88,13 +89,19 @@ graph TB
     BFF_API -.->|Metrics & Traces| OTEL
     FraudDetection -.->|Metrics & Traces| OTEL
     
+    CBMM -.->|Get Secrets| Vault
+    Saga -.->|Get Secrets| Vault
+    MS_Accounts -.->|Get Secrets| Vault
+    FraudDetection -.->|Get Secrets| Vault
+    
     style Account_DB fill:#90EE90,stroke:#006400
     style Saga_DB fill:#90EE90,stroke:#006400
     style DB_A fill:#90EE90,stroke:#006400
     style Redis fill:#FFB6C1,stroke:#8B0000
+    style Vault fill:#FFD700,stroke:#FF8C00
     
     classDef encrypted stroke:#FF0000,stroke-width:3px,stroke-dasharray: 5 5
-    class CBMM,Saga,MS_Accounts,FraudDetection,Account_DB,Saga_DB,DB_A,Redis encrypted
+    class CBMM,Saga,MS_Accounts,FraudDetection,Account_DB,Saga_DB,DB_A,Redis,Vault encrypted
 ```
 
 ### Diagrama de Secuencia - Flujo CBMM
@@ -312,6 +319,7 @@ Este stack incluye los siguientes servicios:
 - **Apache Kafka**: Message broker para eventos y mensajería asíncrona
 - **Zookeeper**: Coordinación de servicios de Kafka
 - **OpenTelemetry Collector**: Recolección de métricas y trazas
+- **HashiCorp Vault**: Gestión centralizada de secretos, credenciales y claves de encriptación
 - **MS Accounts** (Settlement Service): Microservicio Spring Boot con arquitectura hexagonal para gestión de cuentas, transacciones y procesamiento de eventos CBMM
 - **BFF (Backend for Frontend)**: API Gateway para consultas de clientes (cuentas, transacciones, historial)
 - **Anti-Fraud Service** (Diseño): Motor de detección de fraude que valida transacciones antes de su procesamiento
@@ -468,6 +476,17 @@ docker-compose down -v
 - **Puerto gRPC**: `4317`
 - **Puerto HTTP**: `4318`
 - **Prometheus metrics**: `9090`
+
+### HashiCorp Vault
+- **Puerto API**: `8200`
+- **Puerto Cluster**: `8201`
+- **Modo**: Development (para pruebas locales)
+- **Root Token**: Configurado en variable de entorno
+- **Funcionalidad**: 
+  - Almacenamiento seguro de credenciales de base de datos
+  - Gestión de API keys para servicios externos
+  - Rotación automática de secretos
+  - Encriptación de claves sensibles
 
 ## 📁 Archivos de Configuración
 
