@@ -16,11 +16,12 @@ Sistema asíncrono para movimientos de dinero entre monedas (USD, COP, MXN, etc.
 1. **FX Quote**: Cliente obtiene cotización de cambio del CBMM Request Service
 2. **CBMM Request**: Solicitud enviada al CBMM Request Service, que inicia una saga
 3. **Orchestration**: Saga Orchestrator (componente transversal) coordina el flujo
-4. **Settlement**: Settlement Service (MS Accounts) procesa eventos de débito/crédito desde Kafka
-5. **Validation**: Settlement Service valida balance, ejecuta transacciones y actualiza cuentas
-6. **Compensation**: Si falla, el Saga Orchestrator ejecuta reversiones automáticas
-7. **Notification**: Saga Orchestrator notifica resultado final al CBMM Request Service
-8. **Query**: Cliente consulta cuentas y transacciones a través del BFF (Backend for Frontend), que se comunica con Settlement Service
+4. **Fraud Detection**: Saga Orchestrator consulta servicio Anti-Fraude antes de procesar
+5. **Settlement**: Settlement Service (MS Accounts) procesa eventos de débito/crédito desde Kafka
+6. **Validation**: Settlement Service valida balance, ejecuta transacciones y actualiza cuentas
+7. **Compensation**: Si falla, el Saga Orchestrator ejecuta reversiones automáticas
+8. **Notification**: Saga Orchestrator notifica resultado final al CBMM Request Service
+9. **Query**: Cliente consulta cuentas y transacciones a través del BFF (Backend for Frontend), que se comunica con Settlement Service
 
 ## 🏛️ Arquitectura del Sistema
 
@@ -44,6 +45,10 @@ graph TB
         Saga_DB[(Saga State DB)]
     end
     
+    subgraph Fraud[Anti-Fraud Service]
+        FraudDetection[Fraud Detection<br/>Engine]
+    end
+    
     subgraph Settlement[Settlement Service - MS Accounts]
         MS_Accounts[MS Accounts<br/>puerto 8082]
         Account_DB[(PostgreSQL<br/>Schema: cbmm)]
@@ -63,7 +68,9 @@ graph TB
     CBMM -->|2. Initiate Saga| Saga
     
     Saga --> Saga_DB
-    Saga -->|3. Commands| Kafka
+    Saga -->|3a. Fraud Check| FraudDetection
+    FraudDetection -->|Risk Score| Saga
+    Saga -->|3b. Commands| Kafka
     
     Kafka -->|4. Consume Events| MS_Accounts
     MS_Accounts -->|Process CBMM Events| Account_DB
@@ -79,6 +86,15 @@ graph TB
     Saga -.->|Metrics & Traces| OTEL
     MS_Accounts -.->|Metrics & Traces| OTEL
     BFF_API -.->|Metrics & Traces| OTEL
+    FraudDetection -.->|Metrics & Traces| OTEL
+    
+    style Account_DB fill:#90EE90,stroke:#006400
+    style Saga_DB fill:#90EE90,stroke:#006400
+    style DB_A fill:#90EE90,stroke:#006400
+    style Redis fill:#FFB6C1,stroke:#8B0000
+    
+    classDef encrypted stroke:#FF0000,stroke-width:3px,stroke-dasharray: 5 5
+    class CBMM,Saga,MS_Accounts,FraudDetection,Account_DB,Saga_DB,DB_A,Redis encrypted
 ```
 
 ### Diagrama de Secuencia - Flujo CBMM
@@ -89,6 +105,7 @@ sequenceDiagram
     participant BFF as BFF API
     participant API as CBMM API
     participant SO as Saga Orchestrator
+    participant FD as Fraud Detection
     participant K as Kafka
     participant MS as MS Accounts
     participant DB as PostgreSQL
@@ -102,8 +119,20 @@ sequenceDiagram
     C->>API: POST /cbmm
     API->>SO: Initiate Saga
     SO->>SO: Create Saga Instance
-    SO->>K: Publish: debit.command
-    API-->>C: 202 Accepted (saga_id)
+    
+    Note over C,R: Fase 2.5: Fraud Detection
+    SO->>FD: Check Fraud Risk
+    FD->>FD: Analyze transaction patterns
+    FD-->>SO: Risk score & approval
+    
+    alt High Risk Detected
+        SO->>SO: Mark Saga Failed (Fraud)
+        SO->>API: Fraud rejection
+        API-->>C: 403 Forbidden (Fraud)
+    else Low Risk - Approved
+        SO->>K: Publish: debit.command
+        API-->>C: 202 Accepted (saga_id)
+    end
     
     Note over C,R: Fase 3: Debit Phase
     K->>MS: Consume: debit.command
@@ -211,6 +240,13 @@ sequenceDiagram
 - Health checks en todos los componentes
 - Timeout configurables por paso de la saga
 
+**Seguridad**
+- **Encriptación en tránsito**: TLS 1.3 en todas las comunicaciones entre servicios
+- **Encriptación en reposo**: Datos sensibles encriptados en PostgreSQL (AES-256)
+- **Secrets Management**: Credenciales y claves gestionadas con HashiCorp Vault o Azure Key Vault
+- **Fraud Detection**: Validación anti-fraude antes de procesar transacciones
+- **API Security**: OAuth 2.0 + JWT para autenticación y autorización
+
 ## 🏦 MS Accounts - Settlement Service
 
 El microservicio **MS Accounts** (Settlement Service) está implementado en Spring Boot con arquitectura hexagonal. Sus responsabilidades incluyen:
@@ -278,6 +314,7 @@ Este stack incluye los siguientes servicios:
 - **OpenTelemetry Collector**: Recolección de métricas y trazas
 - **MS Accounts** (Settlement Service): Microservicio Spring Boot con arquitectura hexagonal para gestión de cuentas, transacciones y procesamiento de eventos CBMM
 - **BFF (Backend for Frontend)**: API Gateway para consultas de clientes (cuentas, transacciones, historial)
+- **Anti-Fraud Service** (Diseño): Motor de detección de fraude que valida transacciones antes de su procesamiento
 - **Saga Orchestrator** (Diseño): Componente transversal para coordinación de transacciones distribuidas
 
 ### Estructura del MS Accounts (Arquitectura Hexagonal)
