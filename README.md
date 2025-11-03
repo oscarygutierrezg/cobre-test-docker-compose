@@ -313,9 +313,6 @@ Este stack incluye los siguientes servicios:
 - **OpenTelemetry Collector**: Recolección de métricas y trazas
 - **HashiCorp Vault**: Gestión centralizada de secretos, credenciales y claves de encriptación
 - **MS Accounts** (Settlement Service): Microservicio Spring Boot con arquitectura hexagonal para gestión de cuentas, transacciones y procesamiento de eventos CBMM
-- **BFF (Backend for Frontend)**: API Gateway para consultas de clientes (cuentas, transacciones, historial)
-- **Anti-Fraud Service** (Diseño): Motor de detección de fraude que valida transacciones antes de su procesamiento
-- **Saga Orchestrator** (Diseño): Componente transversal para coordinación de transacciones distribuidas
 
 ### Estructura del MS Accounts (Arquitectura Hexagonal)
 
