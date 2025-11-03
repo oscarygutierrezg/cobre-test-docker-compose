@@ -297,14 +297,6 @@ POST /api/v1/events/batch/upload               - Cargar eventos en batch
 GET  /actuator/health                          - Health check
 ```
 
-**BFF (Backend for Frontend):**
-```
-GET  /api/accounts/{accountId}                 - Consultar cuenta (proxy to MS Accounts)
-GET  /api/accounts/{accountId}/transactions    - Consultar transacciones (proxy to MS Accounts)
-GET  /api/accounts/{accountId}/history         - Historial completo (agregación)
-GET  /health                                    - Health check
-```
-
 ### Dependencias
 
 - **PostgreSQL**: Persistencia de cuentas y transacciones (schema: `cbmm`)
